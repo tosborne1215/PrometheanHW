@@ -57,6 +57,8 @@ Use mmap to iterate over a buffer and find matches within that buffer. Subproces
 
 Build a Queue that has the files that need processed. Queues are threadsafe and I should be able to spin up as many threads to process the data as I need. I'll add the data to a stack and after all the files are processed I can then build the dict I need to return the data in.
 
+### Code Structure and Classes
+
 ## Assumptions/Caveats
 
 ### Immediate Concerns
@@ -85,9 +87,13 @@ Assumption: x64
 
 I would consider an IO bound solution a win. I am looking at many files and an IO bound solution is a hardware limitation. There is only so much I can do to solve this. A CPU bound solution may be the fault of my software and so I am going to aim for an IO bounded solution. My dev environment has a SSD so it may be difficult to hit the IO Bound goal.
 
+### Multi Threading vs Multi Process
+
+Multi threading in python is made very difficult due to the GIL especially in version 2.7. I will be using subprocesses to evaluate different files.
+
 ## Tests
 
-Developing all of these tests will be a pain so my goal will be to create a 'master' TestCase that can be inheritted and it will include setUp and tearDown functions that will build very large tests and each inherrited class can point to a specific root position. This reduces the amount of time I will spend creating tests. The other issue I will encounter in my tests is finding suitable regular expressions. I think I am going to use a lorem ipsum generator to create large amounts of data to work with. I can include a list of keywords that I want to count and randomly place them in the text.
+Developing all of these tests will be a pain so my goal will be to create a 'master' TestCase that can be inheritted and it will include setUp and tearDown functions that will build very large tests and each inherrited class can point to a specific root position. This reduces the amount of time I will spend creating tests. The other issue I will encounter in my tests is finding suitable regular expressions. I think I am going to use a lorem ipsum generator to create large amounts of data to work with. I may also look for some sort of existing data that I can use. I can include a list of keywords that I want to count and randomly place them in the text.
 
 - Simple Test
 - High Recursion Depth
