@@ -55,7 +55,7 @@ The code will be evaluated based on the following criteria:
 
 Use mmap to iterate over a buffer and find matches within that buffer. Subprocess can be created to look at directories or files and that can make it a bit more scalable. It may make part of it less reliable, but I believe with some reliability checks I can cover those cases adequately. mmap and subprocess do present obstacles for portability and I may need to do some OS checks and change the behavior slightly to overcome those challenges.
 
-Build a Queue that has the files that need processed. Queues are threadsafe and I should be able to spin up as many threads to process the data as I need. I'll add the data to a stack and after all the files are processed I can then build the dict I need to return the data in.
+Build a Queue that has the files that need processed. Queues are threadsafe and I should be able to spin up as many threads to process the data as I need. I'll return the data to the parent process for additions to the results dict.
 
 ### Code Structure and Classes
 
@@ -94,6 +94,8 @@ Multi threading in python is made very difficult due to the GIL especially in ve
 ## Tests
 
 Developing all of these tests will be a pain so my goal will be to create a 'master' TestCase that can be inheritted and it will include setUp and tearDown functions that will build very large tests and each inherrited class can point to a specific root position. This reduces the amount of time I will spend creating tests. The other issue I will encounter in my tests is finding suitable regular expressions. I think I am going to use a lorem ipsum generator to create large amounts of data to work with. I may also look for some sort of existing data that I can use. I can include a list of keywords that I want to count and randomly place them in the text.
+
+I'm using Faker to generate large amounts of data. The reason I decided to use this is due to the fact that I can generate random sentences with the ability to add my own words. It also allows me to specify a seed allowing me to generate the data the same way every time and control the occurences I am searching for.
 
 - Simple Test
 - High Recursion Depth
