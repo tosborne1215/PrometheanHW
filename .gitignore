@@ -5,7 +5,7 @@ __pycache__/
 
 # My data
 data/
-
+*.dat
 # C extensions
 *.so
 

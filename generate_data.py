@@ -101,3 +101,9 @@ if __name__ == '__main__':
     os.mkdir(complex_dir)
     deep_complex_dir = generate_deep_folder(
         complex_dir, 500, create_random_files=True)
+
+    shallow_dir = os.path.join(root_path, "shallow")
+    os.mkdir(shallow_dir)
+    occurences = generate_file(shallow_dir, "simple_file", "Tim")
+    print("The file: {} has the keyword: {} occuring {} times".format(
+        "simple_file", "Tim", occurences))
