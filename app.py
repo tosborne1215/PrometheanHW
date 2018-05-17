@@ -1,9 +1,14 @@
 #!/usr/bin/python2.7
 
-from multiprocessing import Process, Queue, Pool, Manager
+from multiprocessing import Pool, Manager
 import os
 import re
+import sys
 import time
+
+# Utilizes 2 managed queues. One for input one for results
+# It will create a cool of workers when find is called.
+# This class could alternatively inherit from Manager
 
 
 class FileSearchManager(object):
@@ -16,31 +21,48 @@ class FileSearchManager(object):
         self.manager_queue = self.manager.Queue()
         self.result_queue = self.manager.Queue()
 
+    # This is the function call that starts it all.
+    # It compiles the expression, creates the queue, creates the pool
+    # and then waits until the queue is empty.
+    # Lastly it will return the results.
     def find(self, pattern, dir):
         self.results = dict()
         self.pattern = self.compile_expression(pattern)
         self.create_queue_from_dir(dir)
         self.create_pool()
 
+        # Rest while the queue is emptied.
         while self.manager_queue.qsize() != 0:
             time.sleep(.1)
 
         return self.get_results()
 
+    # Creates a process pool and creates a FileSearchWorker for each process
     def create_pool(self):
         if self.pattern is None:
             raise ValueError("No pattern to look for. Call find first.")
-        self.pool = Pool(self.workers)
-        self.pool.apply_async(FileSearchWorker,
-                              (self.manager_queue, self.pattern, self.result_queue,))
 
-    def create_queue_from_dir(self, root_dir):
+        self.pool = Pool(self.workers)
+        # This will create a task for each worker
+        [self.pool.apply_async(FileSearchWorker,
+                               (self.manager_queue, self.pattern, self.result_queue,)) for i in range(self.workers)]
+
+    # Creates a managed queue from the directory and will stop recursing
+    # When we approach the depth limit
+    def create_queue_from_dir(self, root_dir, depth=0):
+        # Just to avoid throwing an error and be able to
+        # continue processing
+        if depth >= sys.getrecursionlimit() - 1:
+            return None
+        else:
+            depth += 1
+
         if root_dir is None:
             raise ValueError("Input dir is None")
         # Its a dir
         if self.check_file_exists(root_dir) and self.check_is_dir(root_dir):
             for file in os.listdir(root_dir):
-                self.create_queue_from_dir(os.path.join(root_dir, file))
+                self.create_queue_from_dir(os.path.join(root_dir, file), depth)
         # Its a file
         elif self.check_file_exists(root_dir):
             self.manager_queue.put(root_dir)
@@ -48,15 +70,15 @@ class FileSearchManager(object):
         else:
             pass
 
-    def check_progress_worker(self):
-        pass
-
+    # Check if the file is a dir
     def check_is_dir(self, dir_name):
         return os.path.isdir(dir_name) if dir_name is not None else False
 
+    # Check if the file exists
     def check_file_exists(self, file_name):
         return os.path.exists(file_name) if file_name is not None else False
 
+    # Compiles the regex and does some error checking
     def compile_expression(self, expression):
         if expression is None:
             raise ValueError("Regex is None")
@@ -65,6 +87,7 @@ class FileSearchManager(object):
         except re.error:
             raise ValueError("Regex does not compile")
 
+    # Empties the result Queue and formats into a dict
     def get_results(self):
         while not self.result_queue.empty():
             result = self.result_queue.get()
@@ -76,18 +99,26 @@ class FileSearchManager(object):
         return self.results
 
 
-class FileSearchWorker(Process):
+# This object could be static or alternatively inherit from Process
+# Since I chose to use a process pool inheritting was unnecessary.
+class FileSearchWorker(object):
     buffer = 1024 * 1024
 
     def __init__(self, queue, pattern, output_queue):
 
         while not queue.empty():
             item = queue.get()
-            print(os.getpid(), "got")
+            # Leaving this here because it is useful to see
+            # that all workers are processing
+            print(os.getpid(), "PID")
             result = self.search_file(item, pattern)
             output_queue.put(result)
 
+    # Takes a file and runs the expression against it.
+    # It returns a tuple containing the file_name and matches
     def search_file(self, file_name, pattern):
+        if not os.path.exists(file_name):
+            raise ValueError("file_name does not exist")
         matches = 0
         with open(file_name) as f:
             while True:

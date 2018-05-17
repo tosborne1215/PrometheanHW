@@ -85,8 +85,8 @@ class FileSearchManagerTest(unittest.TestCase):
         input_directory = os.path.join(
             self.data_folder, "shallow", "doesnt_exist")
 
-        with self.assertRaisesRegexp(ValueError, "Input dir doesnt exist"):
-            self.manager.create_queue_from_dir(input_directory)
+        self.manager.create_queue_from_dir(input_directory)
+        self.assertIs(self.manager.manager_queue.qsize(), 0)
 
     # This test should emit a warning but still provide some results
     def test_create_queue_from_too_large_dir(self):
@@ -195,13 +195,13 @@ class FileSearchWorkerTest(unittest.TestCase):
     def test_search_large_file(self):
         self.assertIsNone("", "No assertion")
 
-    # technically it is checked before now,
-    # but maybe it should check it anyway?
+    # technically it is checked before now
     def test_search_nonexistent_file(self):
-        self.assertIsNone("", "No assertion")
-
-    def test_search_fname_too_long(self):
-        self.assertIsNone("", "No assertion")
+        input_directory = os.path.join(
+            self.data_folder, "nonexistent")
+        pattern = re.compile("Tim")
+        with self.assertRaisesRegexp(ValueError, "file_name does not exist"):
+            self.worker.search_file(input_directory, pattern)
 
     def test_search_fname(self):
         input_file = os.path.join(
