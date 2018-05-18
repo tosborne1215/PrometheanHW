@@ -5,8 +5,8 @@ import os
 import re
 import sys
 import time
-import plotly.plotly as ply
-import plotly.graph_objs as graphs
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Utilizes 2 managed queues. One for input one for results
 # It will create a cool of workers when find is called.
@@ -51,26 +51,23 @@ class FileSearchManager(object):
 
     # Creates a managed queue from the directory and will stop recursing
     # When we approach the depth limit
-    def create_queue_from_dir(self, root_dir, depth=0):
-        # Just to avoid throwing an error and be able to
-        # continue processing
-        if depth >= sys.getrecursionlimit() - 1:
-            return None
-        else:
-            depth += 1
+    def create_queue_from_dir(self, root_dir):
 
-        if root_dir is None:
-            raise ValueError("Input dir is None")
-        # Its a dir
-        if self.check_file_exists(root_dir) and self.check_is_dir(root_dir):
-            for file in os.listdir(root_dir):
-                self.create_queue_from_dir(os.path.join(root_dir, file), depth)
-        # Its a file
-        elif self.check_file_exists(root_dir):
-            self.manager_queue.put(root_dir)
-        # It doesnt exist and that is ok
-        else:
-            pass
+        try:
+            if root_dir is None:
+                raise ValueError("Input dir is None")
+            # Its a dir
+            if self.check_file_exists(root_dir) and self.check_is_dir(root_dir):
+                for file in os.listdir(root_dir):
+                    self.create_queue_from_dir(os.path.join(root_dir, file))
+            # Its a file
+            elif self.check_file_exists(root_dir):
+                self.manager_queue.put(root_dir)
+            # It doesnt exist and that is ok
+            else:
+                pass
+        except RuntimeError:
+            print("Runtime error was thrown, but if we have data continue on.")
 
     # Check if the file is a dir
     def check_is_dir(self, dir_name):
@@ -132,7 +129,7 @@ class FileSearchWorker(object):
         return (file_name, matches)
 
 
-# Basically a simple plotly wrapper
+# Basically a matplotlib wrapper
 class GraphIt(object):
 
     def __init__(self, file_name="graph"):
@@ -149,11 +146,14 @@ class GraphIt(object):
         return (labels, vals)
 
     def output_graph(self, labels, data):
-        cdata = [graphs.Bar(
-            x=labels,
-            y=data
-        )]
-        ply.iplot(cdata, filename=self.file_name)
+
+        y_pos = np.arange(len(labels))
+        plt.bar(y_pos, data, align='center', alpha=0.5)
+        plt.xticks(y_pos, labels)
+        plt.ylabel('Mathces')
+        plt.title('File Name')
+
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -172,4 +172,17 @@ if __name__ == '__main__':
                 "The first 2 arguments do not contain a file that exists")
 
         manager = FileSearchManager()
-        manager.find(pattern, file)
+        results = manager.find(pattern, file)
+        plt.rcdefaults()
+
+        try:
+            grapher = GraphIt()
+            cdata = grapher.format_data(results)
+            grapher.output_graph(cdata[0], cdata[1])
+            print("Graph Created: ", grapher.file_name)
+        except ImportError:
+            print(
+                "I used matplotlib and unfortunately that has dependencies you dont have installed.")
+    else:
+        raise ValueError(
+            "The script expects 2 parameters. A path to a dir or file and a pattern")

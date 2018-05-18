@@ -221,7 +221,7 @@ class GraphItTest(unittest.TestCase):
 
     def tearDown(self):
         self.graph.file_name
-        os.remove(self.graph.file_name)
+        # os.remove(self.graph.file_name)
 
     def test_format_data(self):
         pass
@@ -240,5 +240,11 @@ class GraphItTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    setUpDirs()
+    # My script would delete the data/ folder
+    # and if it exists it will throw an error.
+    # But I wont delete files from your computer.
+    try:
+        setUpDirs()
+    except OSError:
+        pass
     unittest.main()

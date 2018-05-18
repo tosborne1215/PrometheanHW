@@ -78,7 +78,9 @@ Represents a process, but doesnt inherit from Process. It only has 1 method and 
 
 - GraphIt
 
-A wrapper around plotly. The plotly library is very handy for generating graphs. It does manipulate the data to graph it before hand. This includes keeping only the file name. I could end up with a situation where the file name is redundant, but keeping the path would look terrible as well.
+A wrapper around matplotlib. The matplotlib library is very handy for generating graphs. It does manipulate the data to graph it before hand. This includes keeping only the file name. I could end up with a situation where the file name is redundant, but keeping the path would look terrible as well.
+
+Since it was a strech goal I did not get much time to make it look nice and it has its own dependencies.
 
 ## Assumptions/Caveats
 
