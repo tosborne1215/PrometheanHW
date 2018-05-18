@@ -3,9 +3,12 @@
 import unittest
 import os
 import re
+import shutil
 from time import sleep
 from multiprocessing import Queue
 from app import FileSearchManager, FileSearchWorker, GraphIt
+import random
+from generate_data import setUp as setUpDirs
 
 
 class FileSearchManagerTest(unittest.TestCase):
@@ -96,10 +99,6 @@ class FileSearchManagerTest(unittest.TestCase):
         with self.assertRaisesRegexp(RuntimeError, "maximum recursion depth exceeded"):
             self.manager.create_queue_from_dir(input_directory)
 
-    # should throw an exception
-    def test_create_queue_from_too_long_fname(self):
-        self.assertIsNone("", "No assertion")
-
     def test_check_file_exists(self):
         input_directory = os.path.join(
             self.data_folder, "too_deep_path_root")
@@ -148,6 +147,13 @@ class FileSearchManagerTest(unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertGreaterEqual(len(result.keys()), 1)
 
+    def test_hard_regex_on_find(self):
+        input_expr = "1.*M"
+        input_directory = os.path.join(self.data_folder, "complex_dir_root")
+        result = self.manager.find(input_expr, input_directory)
+        self.assertIsNotNone(result)
+        self.assertGreater(len(result.keys()), 20)
+
     def test_find_in_many_files(self):
         input_expr = "1RIQUQ7LVM"
         input_directory = os.path.join(self.data_folder, "complex_dir_root")
@@ -192,9 +198,6 @@ class FileSearchWorkerTest(unittest.TestCase):
         self.data_folder = os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "data")
 
-    def test_search_large_file(self):
-        self.assertIsNone("", "No assertion")
-
     # technically it is checked before now
     def test_search_nonexistent_file(self):
         input_directory = os.path.join(
@@ -213,16 +216,29 @@ class FileSearchWorkerTest(unittest.TestCase):
 
 
 class GraphItTest(unittest.TestCase):
+    def setUp(self):
+        self.graph = GraphIt()
 
-    def test_build_graph(self):
-        self.assertIsNone("", "No assertion")
+    def tearDown(self):
+        self.graph.file_name
+        os.remove(self.graph.file_name)
 
-    def test_build_graph_from_none_data(self):
-        self.assertIsNone("", "No assertion")
+    def test_format_data(self):
+        pass
 
-    def test_build_graph_from_large_data(self):
-        self.assertIsNone("", "No assertion")
+    def test_format_from_none_data(self):
+        pass
+
+    def test_format_from_large_data(self):
+        pass
+
+    def test_output_graph(self):
+        pass
+
+    def test_file_name_output(self):
+        pass
 
 
 if __name__ == '__main__':
+    setUpDirs()
     unittest.main()

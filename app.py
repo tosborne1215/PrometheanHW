@@ -5,6 +5,8 @@ import os
 import re
 import sys
 import time
+import plotly.plotly as ply
+import plotly.graph_objs as graphs
 
 # Utilizes 2 managed queues. One for input one for results
 # It will create a cool of workers when find is called.
@@ -130,14 +132,44 @@ class FileSearchWorker(object):
         return (file_name, matches)
 
 
+# Basically a simple plotly wrapper
 class GraphIt(object):
 
-    def __init__(self):
-        pass
+    def __init__(self, file_name="graph"):
+        self.file_name = file_name
 
-    def build_graph(self, data):
-        pass
+    def format_data(self, data):
+        vals = list()
+        labels = list()
+        for label in data.keys():
+            vals.append(data.get(label))
+            # get the last element which is the fname. Otherwise
+            # the chart will look horrible
+            labels.append(label.split(os.pathsep)[-1])
+        return (labels, vals)
+
+    def output_graph(self, labels, data):
+        cdata = [graphs.Bar(
+            x=labels,
+            y=data
+        )]
+        ply.iplot(cdata, filename=self.file_name)
 
 
 if __name__ == '__main__':
-    pass
+    if len(sys.argv) == 3:
+        file = None
+        pattern = None
+
+        if os.path.exists(sys.argv[1]):
+            file = sys.argv[1]
+            pattern = sys.argv[2]
+        elif os.path.exists(sys.argv[2]):
+            file = sys.argv[2]
+            pattern = sys.argv[1]
+        else:
+            raise ValueError(
+                "The first 2 arguments do not contain a file that exists")
+
+        manager = FileSearchManager()
+        manager.find(pattern, file)

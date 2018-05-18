@@ -9,6 +9,11 @@ What is included in this zip?
 - This readme!
 - app_test.py which contains various unittests
 - app.py the application itself. I probably should think about a new name.
+- generate_data.py which generates random files and large directories. I call this script from my test before I test. This file is sloppy, but would only be test code.
+
+How do I run the Unit Tests?
+
+You will need to install the requirements. I use faker to generate text and also generate large dirs. This is done adjacant to the called file in data/
 
 ## Requirements:
 
@@ -53,11 +58,27 @@ The code will be evaluated based on the following criteria:
 
 ## Initial Approach
 
-Use mmap to iterate over a buffer and find matches within that buffer. Subprocess can be created to look at directories or files and that can make it a bit more scalable. It may make part of it less reliable, but I believe with some reliability checks I can cover those cases adequately. mmap and subprocess do present obstacles for portability and I may need to do some OS checks and change the behavior slightly to overcome those challenges.
+Use a buffer and find matches within that buffer. Subprocess can be created to look at directories or files and that can make it a bit more scalable. It may make part of it less reliable, but I believe with some reliability checks I can cover those cases adequately. Subprocesses do present obstacles for portability and I may need to do some OS checks and change the behavior slightly to overcome those challenges.
 
-Build a Queue that has the files that need processed. Queues are threadsafe and I should be able to spin up as many threads to process the data as I need. I'll return the data to the parent process for additions to the results dict.
+Build a Queue that has the files that need processed. Managed queues are safe to use and I should be able to spin up as many threads to process the data as I need. I'll add the data to a different managed queue for results.
 
 ### Code Structure and Classes
+
+3 classes
+
+- FileSearchManager
+
+I have some inline documentation present. Check it out for more details.
+
+Class has a method find that will accept a few parameters. It spins up a pool of processes and creates a queue of work.
+
+- FileSearchWorker
+
+Represents a process, but doesnt inherit from Process. It only has 1 method and that method will search a single file using the pattern and return a tuple containing the file name and matches.
+
+- GraphIt
+
+A wrapper around plotly. The plotly library is very handy for generating graphs. It does manipulate the data to graph it before hand. This includes keeping only the file name. I could end up with a situation where the file name is redundant, but keeping the path would look terrible as well.
 
 ## Assumptions/Caveats
 
@@ -67,7 +88,7 @@ Since I am receiving a regular expression my ability to ensure 100% coverage of 
 
 ### File sizes are not bounded
 
-Some files will be larger than I can load into memory. mmap is good solution to this problem, but if the regular expression match is larger than my buffer then I will not find those matches. Further a file may not have any lines and be extremely large.
+Some files will be larger than I can load into memory. I am reading buffers of the file instead of the entire file, but if the regular expression match is larger than my buffer then I will not find those matches. Further a file may not have any lines and be extremely large.
 
 ### Regular expressions complexity
 
@@ -75,7 +96,7 @@ Without knowing what kind of regular expressions will be used I may be very limi
 
 What if the regular expression contains an anchor and expects me to find values at the end of a line? I am searching a buffer and wont have the expected anchor or start. I could attempt to disect the regular expression but from my experience that seems destined to fail. They can be very complex.
 
-Assumption: The pattern doesnt contain anchors
+Assumption: The pattern doesnt contain anchors. I have finished my code and realized the example given contains an anchor. I think the buffer is large enough to cover this case in most situations.
 
 ### CPU Architecture (x86 or x64 ?)
 
@@ -87,26 +108,26 @@ Assumption: x64
 
 I would consider an IO bound solution a win. I am looking at many files and an IO bound solution is a hardware limitation. There is only so much I can do to solve this. A CPU bound solution may be the fault of my software and so I am going to aim for an IO bounded solution. My dev environment has a SSD so it may be difficult to hit the IO Bound goal.
 
+I'm not sure that I made this goal. I was happy with the performance of some of my tests.
+
 ### Multi Threading vs Multi Process
 
-Multi threading in python is made very difficult due to the GIL especially in version 2.7. I will be using subprocesses to evaluate different files.
+Multi threading in python is made very difficult due to the GIL especially in version 2.7. I will be using subprocesses to evaluate different files. It does have more overhead but I am creating the processes once and using them in the task until it has found all matches.
 
 ## Tests
 
-Developing all of these tests will be a pain so my goal will be to create a 'master' TestCase that can be inheritted and it will include setUp and tearDown functions that will build very large tests and each inherrited class can point to a specific root position. This reduces the amount of time I will spend creating tests. The other issue I will encounter in my tests is finding suitable regular expressions. I think I am going to use a lorem ipsum generator to create large amounts of data to work with. I may also look for some sort of existing data that I can use. I can include a list of keywords that I want to count and randomly place them in the text.
-
-I'm using Faker to generate large amounts of data. The reason I decided to use this is due to the fact that I can generate random sentences with the ability to add my own words. It also allows me to specify a seed allowing me to generate the data the same way every time and control the occurences I am searching for.
-
-- Simple Test
-- High Recursion Depth
-- Too High Recursion Depth
-- Long Line Test
-- Huge File Test
-- Huge File Single Line Test
-- Long Short Line Test
-- Many Subdirs test
-- Many Subdirs with large files
-- Invalid Input
-- Out of memory exceptions
+I am using Faker to generate large bodies of text with a predefined seed. This reduces the amount of time I will spend creating tests. The other issue I will encounter in my tests is finding suitable regular expressions. I can include a list of keywords that I want to count and randomly place them in the text. The script to generate my directory structure and random files in generate_data.py. It is called in app_test.py in the __main__ check. It does delete the data folder in which it is located.
 
 ## Misc Notes
+
+Am I worried about the lack of complexity in my regular expression?
+
+No. There will definitely be cases I havent covered due to regex being very complex.
+
+Am I worred about the lack of diversity in my generated text?
+
+No. Since I relying on the built in regular expression functions I can expect them to 'just work.'
+
+Unicode handling?
+
+...This is why I use python3, but yes it can be a concern. Maybe I will add a test case for it and build in some unicode handling. I didnt add a test for it after all. It will likely come up.

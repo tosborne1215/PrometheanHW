@@ -5,12 +5,6 @@ import random
 import string
 import sys
 
-seed = 12345678
-
-fake = Faker()
-fake.seed(seed)
-random.seed(a=seed)
-
 
 def generate_unique_word():
     return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
@@ -67,12 +61,20 @@ def generate_deep_folder(root, depth=500, create_random_files=False):
     return last_file_name
 
 
-if __name__ == '__main__':
+fake = Faker()
+
+
+def setUp():
+    seed = 12345678
+    fake.seed(seed)
+    random.seed(a=seed)
+
     root_path = os.path.join(os.path.dirname(
         os.path.abspath(__file__)), "data")
     old_limit = sys.getrecursionlimit()
     sys.setrecursionlimit(old_limit + 500)
-    rmtree(root_path, ignore_errors=True)
+    # I dont want to do this on someone else's system.
+    # rmtree(root_path, ignore_errors=True)
     sys.setrecursionlimit(old_limit)
     os.mkdir(root_path)
 
@@ -107,3 +109,7 @@ if __name__ == '__main__':
     occurences = generate_file(shallow_dir, "simple_file", "Tim")
     print("The file: {} has the keyword: {} occuring {} times".format(
         "simple_file", "Tim", occurences))
+
+
+if __name__ == '__main__':
+    setUp()
